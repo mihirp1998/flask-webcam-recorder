@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="style.css">
+
+</head>
+
+<body>
+<video autoplay type="video/webm"></video>
+<p><a href="#" onclick="init()">init</a></p>
+<p><a href="#" onclick="record()">record</a></p>
+<p><a href="#" onclick="stop()">stop</a></p>
+<p><a href="#" onclick="load()">load</a></p>
+
+
+
+<script src="jquery-3.2.1.min.js"></script>
+
+<script src="whammy.js"></script>
+<script>
+var video = document.getElementsByTagName('video')[0],
+    canvas = document.createElement('canvas'),
+    context = canvas.getContext('2d'),
+    frames = [],
+    task = null;
+
+function init() {
+    console.log('init');
+    try {
+        navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+    } catch (e) {
+        window.alert('Your browser does not support WebVideo, try Google Chrome');
+    }
+    if (navigator.getUserMedia) {
+        navigator.getUserMedia({video: true}, function (stream) {
+            console.log('stream', stream);
+            video.src = window.URL.createObjectURL(stream);
+        }, function (e) {
+            window.alert('Please enable your webcam to begin recording');
+        });
+    } else {
+        window.alert('Your browser does not support recording, try Google Chrome');
+    }
+}
+
+function captureFrame(time) {
+    task = requestAnimationFrame(captureFrame);
+    context.drawImage(video, 0, 0, 320, 240);
+    frames.push(canvas.toDataURL('image/webp', 1)); // image/jpeg is faster
+};
+
+function record() {
+    console.log('record', video.src);
+    frames = [];
+    task = requestAnimationFrame(captureFrame);
+}
+
+function stop() {
+    console.log('stdp', frames.length);
+    cancelAnimationFrame(task);
+}
+
+function load() {
+ console.log(Whammy.fromImageArray(frames, 1000 / 60));
+/* video.src = window.URL.createObjectURL();*/
+ var blob = Whammy.fromImageArray(frames, 1000 / 60)
+ var fd = new FormData();
+fd.append('fname', 'test.wav');
+fd.append('data', blob);
+
+$.ajax({
+    type: 'POST',
+    url: '/upload',
+    data: fd,
+    processData: false,
+    contentType: false
+}).done(function(data) {
+       console.log(data);
+});
+ console.log(video.src)
+}
+
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
